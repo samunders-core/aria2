@@ -89,6 +89,7 @@ private:
   // (including both Metalink XML and Metalink/HTTP) twice.
   bool acceptMetalink_;
 
+  std::map<std::string, std::unique_ptr<std::string>> commandEnvironment_;
 public:
   DownloadContext();
 
@@ -233,6 +234,10 @@ public:
   // RequestGroupMan via getOwnerRequestGroup().
   void updateUploadLength(size_t bytes);
   void updateUploadSpeed(size_t bytes);
+
+  std::map<std::string, std::unique_ptr<std::string>>& commandEnvironment() {
+	  return commandEnvironment_;
+  }
 };
 
 } // namespace aria2

@@ -614,6 +614,10 @@
     "                              option is not executed.\n"           \
     "                              See --on-download-start option for the\n" \
     "                              requirement of COMMAND.")
+#define TEXT_ALLOWED_ENVIRONMENT_VARIABLES                                           \
+  _(" --allowed-environment-variables=VARIABLES Comma separated list of environment\n" \
+    "                              variables allowed to be changed via RPC. Applies\n" \
+    "                              to each defined --on-download-* command")
 #define TEXT_BT_STOP_TIMEOUT                                            \
   _(" --bt-stop-timeout=SEC        Stop BitTorrent download if download speed is 0 in\n" \
     "                              consecutive SEC seconds. If 0 is given, this\n" \

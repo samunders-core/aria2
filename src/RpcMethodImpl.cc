@@ -1353,6 +1353,46 @@ std::unique_ptr<ValueBase> ChangeUriRpcMethod::process(const RpcRequest& req,
   return std::move(res);
 }
 
+std::unique_ptr<ValueBase> ChangeEnvironmentRpcMethod::process(const RpcRequest& req,
+                                                       DownloadEngine* e)
+{
+	  const String* gidParam = checkRequiredParam<String>(req, 0);
+	  const Dict* addVarsParam = checkRequiredParam<Dict>(req, 1);
+	  const List* delVarsParam = checkRequiredParam<List>(req, 2);
+
+	  a2_gid_t gid = str2Gid(gidParam);
+	  auto group = e->getRequestGroupMan()->findGroup(gid);
+	  if (!group) {
+	    throw DL_ABORT_EX(
+	        fmt("Cannot manage environment variables of GID#%s", GroupId::toHex(gid).c_str()));
+	  }
+	  auto& envVarsAssignments = group->getDownloadContext()->commandEnvironment();
+	  size_t delcount = 0;
+	  for (auto& elem : *delVarsParam) {
+	    const String* varName = downcast<String>(elem);
+	    if (varName) {
+	      delcount += envVarsAssignments.erase(varName->s());
+	    }
+	  }
+	  const std::string& allowed = e->getOption()->get(PREF_ALLOWED_ENVIRONMENT_VARIABLES);
+	  size_t addcount = 0;
+	  for (auto& elem : *addVarsParam) {
+	    const std::string& varName = elem.first;
+	    const String* varValue = downcast<String>(elem.second);
+	    std::string::size_type at = allowed.find(varName);
+	    std::string::size_type after = at != std::string::npos ? at + varName.length() : std::string::npos;
+	    if (!varValue || at == std::string::npos || (at > 0 && allowed[at - 1] != ',') || (after < allowed.length() && allowed[after] != ',')) {
+	    	continue;
+	    }
+	    envVarsAssignments[varName] = std::make_unique<std::string>(fmt("%s=%s", varName, varValue->s()));
+	    ++addcount;
+	  }
+	  auto res = List::g();
+	  res->append(Integer::g(addcount));
+	  res->append(Integer::g(delcount));
+	  return std::move(res);
+}
+
 namespace {
 std::unique_ptr<ValueBase> goingShutdown(const RpcRequest& req,
                                          DownloadEngine* e, bool forceHalt)

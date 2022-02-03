@@ -79,6 +79,8 @@ class RpcMethodTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testGetSessionInfo);
   CPPUNIT_TEST(testChangeUri);
   CPPUNIT_TEST(testChangeUri_fail);
+  CPPUNIT_TEST(testChangeEnvironment);
+  CPPUNIT_TEST(testChangeEnvironment_fail);
   CPPUNIT_TEST(testPause);
   CPPUNIT_TEST(testSystemMulticall);
   CPPUNIT_TEST(testSystemMulticall_fail);
@@ -149,6 +151,8 @@ public:
   void testGetSessionInfo();
   void testChangeUri();
   void testChangeUri_fail();
+  void testChangeEnvironment();
+  void testChangeEnvironment_fail();
   void testPause();
   void testSystemMulticall();
   void testSystemMulticall_fail();
@@ -1271,6 +1275,96 @@ void RpcMethodTest::testChangeUri_fail()
   req.params->set(3, String::g("http://url"));
   res = m.execute(std::move(req), e_.get());
   // RPC request fails because 4th param is not list.
+  CPPUNIT_ASSERT_EQUAL(1, res.code);
+}
+
+namespace {
+RpcRequest createChangeEnvironmentReq(a2_gid_t gid)
+{
+  auto req = createReq(ChangeEnvironmentRpcMethod::getMethodName());
+
+  req.params->append(GroupId::toHex(gid));   // GID
+  return req;
+}
+} // namespace
+
+void RpcMethodTest::testChangeEnvironment()
+{
+  std::shared_ptr<FileEntry> files[1];
+  files[0].reset(new FileEntry());
+  files[0]->addUri("http://example.org/aria2.tar.bz2");
+  auto dctx = std::make_shared<DownloadContext>();
+  dctx->setFileEntries(&files[0], &files[1]);
+  auto group = std::make_shared<RequestGroup>(GroupId::create(), option_);
+  group->setDownloadContext(dctx);
+  e_->getRequestGroupMan()->addReservedGroup(group);
+  e_->getOption()->put(PREF_ALLOWED_ENVIRONMENT_VARIABLES, "EPISODE,DEST");
+
+  ChangeEnvironmentRpcMethod m;
+  auto req = createChangeEnvironmentReq(group->getGID());
+  auto addVars = Dict::g();
+  addVars->put("EPISODE", "S01E01");
+  req.params->append(std::move(addVars));
+  auto removeVars = List::g();
+  removeVars->append("HOME");
+  removeVars->append("USER");
+  req.params->append(std::move(removeVars));
+
+  auto res = m.execute(std::move(req), e_.get());
+  CPPUNIT_ASSERT_EQUAL(0, res.code);
+  CPPUNIT_ASSERT_EQUAL(
+      (int64_t)1, downcast<Integer>(downcast<List>(res.param)->get(0))->i());
+  CPPUNIT_ASSERT_EQUAL(
+      (int64_t)0, downcast<Integer>(downcast<List>(res.param)->get(1))->i());
+  CPPUNIT_ASSERT_EQUAL((size_t)1, files[0]->getRemainingUris().size());
+  CPPUNIT_ASSERT_EQUAL(std::string("http://example.org/aria2.tar.bz2"), files[0]->getRemainingUris()[0]);
+  CPPUNIT_ASSERT_EQUAL((size_t)1, dctx->commandEnvironment().size());
+  CPPUNIT_ASSERT_EQUAL((const char *)"EPISODE=S01E01", dctx->commandEnvironment()["EPISODE"]->c_str());
+
+  req = createChangeEnvironmentReq(group->getGID());
+  addVars = Dict::g();
+  addVars->put("DEST", "/home/aria2/Downloads");
+  req.params->append(std::move(addVars));
+  removeVars = List::g();
+  removeVars->append("EPISODE");
+  req.params->append(std::move(removeVars));
+
+  res = m.execute(std::move(req), e_.get());
+  CPPUNIT_ASSERT_EQUAL(0, res.code);
+  CPPUNIT_ASSERT_EQUAL(
+      (int64_t)1, downcast<Integer>(downcast<List>(res.param)->get(0))->i());
+  CPPUNIT_ASSERT_EQUAL(
+      (int64_t)1, downcast<Integer>(downcast<List>(res.param)->get(1))->i());
+  CPPUNIT_ASSERT_EQUAL((size_t)1, files[0]->getRemainingUris().size());
+  CPPUNIT_ASSERT_EQUAL(std::string("http://example.org/aria2.tar.bz2"), files[0]->getRemainingUris()[0]);
+  CPPUNIT_ASSERT_EQUAL((size_t)1, dctx->commandEnvironment().size());
+  CPPUNIT_ASSERT_EQUAL(std::string("DEST=/home/aria2/Downloads"), *dctx->commandEnvironment()["DEST"]);
+}
+
+void RpcMethodTest::testChangeEnvironment_fail()
+{
+  std::shared_ptr<FileEntry> files[1];
+  files[0].reset(new FileEntry());
+  files[0]->addUri("http://example.org/aria2.tar.bz2");
+  auto dctx = std::make_shared<DownloadContext>();
+  dctx->setFileEntries(&files[0], &files[1]);
+  auto group = std::make_shared<RequestGroup>(GroupId::create(), option_);
+  group->setDownloadContext(dctx);
+  e_->getRequestGroupMan()->addReservedGroup(group);
+  e_->getOption()->put(PREF_ALLOWED_ENVIRONMENT_VARIABLES, "EPISODE,DEST");
+
+  ChangeEnvironmentRpcMethod m;
+  auto req = createChangeEnvironmentReq(group->getGID());
+  req.params->append(std::move(Dict::g()));
+  req.params->append(std::move(List::g()));
+  auto res = m.execute(std::move(req), e_.get());
+  CPPUNIT_ASSERT_EQUAL(0, res.code);
+
+  req = createChangeEnvironmentReq(GroupId::create()->getNumericId());
+  req.params->append(std::move(Dict::g()));
+  req.params->append(std::move(List::g()));
+  res = m.execute(std::move(req), e_.get());
+  // RPC request fails because the given GID does not exist.
   CPPUNIT_ASSERT_EQUAL(1, res.code);
 }
 

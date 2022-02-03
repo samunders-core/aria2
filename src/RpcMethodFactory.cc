@@ -77,6 +77,7 @@ std::vector<std::string> rpcMethodNames = {
     "aria2.tellStopped",
     "aria2.getOption",
     "aria2.changeUri",
+	"aria2.changeEnvironment",
     "aria2.changeOption",
     "aria2.getGlobalOption",
     "aria2.changeGlobalOption",
@@ -205,6 +206,10 @@ std::unique_ptr<RpcMethod> createMethod(const std::string& methodName)
 
   if (methodName == ChangeUriRpcMethod::getMethodName()) {
     return make_unique<ChangeUriRpcMethod>();
+  }
+
+  if (methodName == ChangeEnvironmentRpcMethod::getMethodName()) {
+    return make_unique<ChangeEnvironmentRpcMethod>();
   }
 
   if (methodName == ChangeOptionRpcMethod::getMethodName()) {

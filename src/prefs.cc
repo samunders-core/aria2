@@ -296,6 +296,8 @@ PrefPtr PREF_ON_DOWNLOAD_PAUSE = makePref("on-download-pause");
 PrefPtr PREF_ON_DOWNLOAD_STOP = makePref("on-download-stop");
 PrefPtr PREF_ON_DOWNLOAD_COMPLETE = makePref("on-download-complete");
 PrefPtr PREF_ON_DOWNLOAD_ERROR = makePref("on-download-error");
+// values: comma separated words
+PrefPtr PREF_ALLOWED_ENVIRONMENT_VARIABLES = makePref("allowed-environment-variables");
 // value: string
 PrefPtr PREF_INTERFACE = makePref("interface");
 // value: string

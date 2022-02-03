@@ -2229,7 +2229,7 @@ bool inSameCidrBlock(const std::string& ip1, const std::string& ip2,
 
 namespace {
 
-void executeHook(const std::string& command, a2_gid_t gid, size_t numFiles,
+void executeHook(const std::string& command, std::map<std::string, std::unique_ptr<std::string>>& envVarsAssignments, a2_gid_t gid, size_t numFiles,
                  const std::string& firstFilename)
 {
   const std::string gidStr = GroupId::toHex(gid);
@@ -2240,9 +2240,14 @@ void executeHook(const std::string& command, a2_gid_t gid, size_t numFiles,
   pid_t cpid = fork();
   if (cpid == 0) {
     // child!
-    execlp(command.c_str(), command.c_str(), gidStr.c_str(),
+	const char* envp[envVarsAssignments.size() + 1];
+	for(auto& elem : envVarsAssignments) {
+		envp[cpid++] = elem.second->c_str();
+	}
+	envp[sizeof(envp)/sizeof(const char*) - 1] = reinterpret_cast<const char*>(0);
+    execle(command.c_str(), command.c_str(), gidStr.c_str(),
            numFilesStr.c_str(), firstFilename.c_str(),
-           reinterpret_cast<char*>(0));
+           reinterpret_cast<char*>(0), envp);
     perror(("Could not execute user command: " + command).c_str());
     _exit(EXIT_FAILURE);
     return;
@@ -2324,6 +2329,7 @@ void executeHookByOptName(const RequestGroup* group, const Option* option,
   const std::string& cmd = option->get(pref);
   if (!cmd.empty()) {
     const std::shared_ptr<DownloadContext> dctx = group->getDownloadContext();
+    std::map<std::string, std::unique_ptr<std::string>>& commandEnvironment = dctx->commandEnvironment();
     std::string firstFilename;
     size_t numFiles = 0;
     if (!group->inMemoryDownload()) {
@@ -2333,7 +2339,7 @@ void executeHookByOptName(const RequestGroup* group, const Option* option,
       }
       numFiles = dctx->countRequestedFileEntry();
     }
-    executeHook(cmd, group->getGID(), numFiles, firstFilename);
+    executeHook(cmd, commandEnvironment, group->getGID(), numFiles, firstFilename);
   }
 }
 

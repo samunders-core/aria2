@@ -471,6 +471,15 @@ public:
   static const char* getMethodName() { return "aria2.changeUri"; }
 };
 
+class ChangeEnvironmentRpcMethod : public RpcMethod {
+protected:
+  virtual std::unique_ptr<ValueBase> process(const RpcRequest& req,
+                                             DownloadEngine* e) CXX11_OVERRIDE;
+
+public:
+  static const char* getMethodName() { return "aria2.changeEnvironment"; }
+};
+
 class GetSessionInfoRpcMethod : public RpcMethod {
 protected:
   virtual std::unique_ptr<ValueBase> process(const RpcRequest& req,

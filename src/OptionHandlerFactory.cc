@@ -588,6 +588,13 @@ std::vector<OptionHandler*> OptionHandlerFactory::createOptionHandlers()
     handlers.push_back(op);
   }
   {
+    OptionHandler* op(new DefaultOptionHandler(
+        PREF_ALLOWED_ENVIRONMENT_VARIABLES, TEXT_ALLOWED_ENVIRONMENT_VARIABLES, NO_DEFAULT_VALUE,
+        "word(s)", OptionHandler::REQ_ARG));
+    op->addTag(TAG_ADVANCED);
+    handlers.push_back(op);
+  }
+  {
     OptionHandler* op(new OptimizeConcurrentDownloadsOptionHandler(
         PREF_OPTIMIZE_CONCURRENT_DOWNLOADS, TEXT_OPTIMIZE_CONCURRENT_DOWNLOADS,
         A2_V_FALSE, OptionHandler::OPT_ARG));

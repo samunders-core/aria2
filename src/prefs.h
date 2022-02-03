@@ -249,6 +249,8 @@ extern PrefPtr PREF_ON_DOWNLOAD_PAUSE;
 extern PrefPtr PREF_ON_DOWNLOAD_STOP;
 extern PrefPtr PREF_ON_DOWNLOAD_COMPLETE;
 extern PrefPtr PREF_ON_DOWNLOAD_ERROR;
+// values: comma separated words
+extern PrefPtr PREF_ALLOWED_ENVIRONMENT_VARIABLES;
 // value: string
 extern PrefPtr PREF_INTERFACE;
 // value: string
