@@ -591,21 +591,30 @@ void RpcMethodTest::testGetOption()
   CPPUNIT_ASSERT_EQUAL(std::string("alpha"),
                        downcast<String>(resopt->get(PREF_DIR->k))->s());
 
-  auto dctx = std::make_shared<DownloadContext>();
-  group->setDownloadContext(dctx);
-  e_->getOption()->put(PREF_ALLOWED_ENVIRONMENT_VARIABLES, std::string("EPISODE,DEST"));
-  dctx->commandEnvironment()[std::string("EPISODE")] = make_unique<std::string>("EPISODE=S01E01");
   req = createReq(GetOptionRpcMethod::getMethodName());
   req.params->append(dr->gid->toHex());
   res = m.execute(std::move(req), e_.get());
   CPPUNIT_ASSERT_EQUAL(0, res.code);
   resopt = downcast<Dict>(res.param);
-  CPPUNIT_ASSERT_EQUAL((size_t)3, resopt->size());
+  CPPUNIT_ASSERT_EQUAL(std::string("bravo"),
+                         downcast<String>(resopt->get(PREF_DIR->k))->s());
+
+  auto dctx = std::make_shared<DownloadContext>();
+  group->setDownloadContext(dctx);
+  e_->getOption()->put(PREF_ALLOWED_ENVIRONMENT_VARIABLES, std::string("EPISODE,DEST"));
+  dctx->commandEnvironment()[std::string("EPISODE")] = make_unique<std::string>("EPISODE=S01E01");
+
+  req = createReq(GetOptionRpcMethod::getMethodName());
+  req.params->append(GroupId::toHex(group->getGID()));
+  res = m.execute(std::move(req), e_.get());
+  CPPUNIT_ASSERT_EQUAL(0, res.code);
+  resopt = downcast<Dict>(res.param);
+  CPPUNIT_ASSERT_EQUAL((size_t)4, resopt->size());
   CPPUNIT_ASSERT_EQUAL(std::string("S01E01"),
                        downcast<String>(resopt->get("EPISODE"))->s());
   CPPUNIT_ASSERT_EQUAL(std::string(""),
                          downcast<String>(resopt->get("DEST"))->s());
-  CPPUNIT_ASSERT_EQUAL(std::string("bravo"),
+  CPPUNIT_ASSERT_EQUAL(std::string("alpha"),
                          downcast<String>(resopt->get(PREF_DIR->k))->s());
 
   // Invalid GID

@@ -1189,7 +1189,7 @@ void pushRequestOption(Dict* dict, const std::shared_ptr<Option>& option,
 void pushEnvironmentVariables(Dict* dict, const std::string& allowed, std::map<std::string, std::unique_ptr<std::string>>& envVarsAssignments)
 {
 	for (size_t at = allowed.length() ? 0 : std::string::npos; at != std::string::npos; ) {
-		size_t after = allowed.find(",");
+		size_t after = allowed.find(",", at);
 		const std::string varName = allowed.substr(at, after);
 		std::map<std::string, std::unique_ptr<std::string>>::iterator entry = envVarsAssignments.find(varName);
 		dict->put(varName, entry != envVarsAssignments.end() ? entry->second.get()->substr(varName.length() + 1) : "");
