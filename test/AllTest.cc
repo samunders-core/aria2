@@ -5,6 +5,8 @@
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
+#include <cppunit/TestResult.h>
+#include <cppunit/TextTestProgressListener.h>
 
 #include "Platform.h"
 #include "SocketCore.h"
@@ -12,6 +14,13 @@
 #include "console.h"
 #include "LogFactory.h"
 #include "prefs.h"
+
+class MyCustomProgressTestListener : public CppUnit::TextTestProgressListener {
+ public:
+     virtual void startTest(CppUnit::Test *test) {
+         fprintf(stderr, "starting test %s\n", test->getName().c_str());
+     }
+};
 
 int main(int argc, char* argv[])
 {
@@ -45,6 +54,9 @@ int main(int argc, char* argv[])
 
   runner.setOutputter(
       new CppUnit::CompilerOutputter(&runner.result(), std::cerr));
+
+  MyCustomProgressTestListener progress;
+  runner.eventManager().addListener(&progress);
 
   // Run the tests.
   bool successfull = runner.run();

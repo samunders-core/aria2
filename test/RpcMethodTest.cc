@@ -593,13 +593,14 @@ void RpcMethodTest::testGetOption()
 
   auto dctx = std::make_shared<DownloadContext>();
   group->setDownloadContext(dctx);
-  e_->getOption()->put(PREF_ALLOWED_ENVIRONMENT_VARIABLES, "EPISODE,DEST");
-  dctx->commandEnvironment()["EPISODE"] = make_unique<std::string>("EPISODE=S01E01");
+  e_->getOption()->put(PREF_ALLOWED_ENVIRONMENT_VARIABLES, std::string("EPISODE,DEST"));
+  dctx->commandEnvironment()[std::string("EPISODE")] = make_unique<std::string>("EPISODE=S01E01");
   req = createReq(GetOptionRpcMethod::getMethodName());
   req.params->append(dr->gid->toHex());
   res = m.execute(std::move(req), e_.get());
   CPPUNIT_ASSERT_EQUAL(0, res.code);
   resopt = downcast<Dict>(res.param);
+  CPPUNIT_ASSERT_EQUAL((size_t)3, resopt->size());
   CPPUNIT_ASSERT_EQUAL(std::string("S01E01"),
                        downcast<String>(resopt->get("EPISODE"))->s());
   CPPUNIT_ASSERT_EQUAL(std::string(""),
@@ -620,7 +621,8 @@ void RpcMethodTest::testChangeOption()
   e_->getRequestGroupMan()->addReservedGroup(group);
   auto dctx = std::make_shared<DownloadContext>();
   group->setDownloadContext(dctx);
-  e_->getOption()->put(PREF_ALLOWED_ENVIRONMENT_VARIABLES, "EPISODE,DEST");
+  group->setState(RequestGroup::STATE_ACTIVE);
+  e_->getOption()->put(PREF_ALLOWED_ENVIRONMENT_VARIABLES, std::string("EPISODE,DEST"));
 
   ChangeOptionRpcMethod m;
   auto req = createReq(ChangeOptionRpcMethod::getMethodName());
