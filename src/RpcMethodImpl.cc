@@ -1130,6 +1130,9 @@ std::unique_ptr<ValueBase> ChangeOptionRpcMethod::process(const RpcRequest& req,
           e->setRefreshInterval(std::chrono::milliseconds(0));
         }
       }
+      const std::string& allowed = e->getOption()->get(PREF_ALLOWED_ENVIRONMENT_VARIABLES);
+	  auto& envVarsAssignments = group->getDownloadContext()->commandEnvironment();
+	  updateEnvironment(allowed, envVarsAssignments, optsParam);
     }
     else {
       gatherChangeableOptionForReserved(&option, optsParam);
@@ -1182,6 +1185,18 @@ void pushRequestOption(Dict* dict, const std::shared_ptr<Option>& option,
     }
   }
 }
+
+void pushEnvironmentVariables(Dict* dict, const std::string& allowed, std::map<std::string, std::unique_ptr<std::string>>& envVarsAssignments)
+{
+	for (size_t at = allowed.length() ? 0 : std::string::npos; at != std::string::npos; ) {
+		size_t after = allowed.find(",");
+		const std::string varName = allowed.substr(at, after);
+		std::map<std::string, std::unique_ptr<std::string>>::iterator entry = envVarsAssignments.find(varName);
+		dict->put(varName, entry != envVarsAssignments.end() ? entry->second.get()->substr(varName.length() + 1) : "");
+		at = after != std::string::npos ? after + 1 : std::string::npos;
+	}
+}
+
 } // namespace
 
 std::unique_ptr<ValueBase> GetOptionRpcMethod::process(const RpcRequest& req,
@@ -1201,6 +1216,9 @@ std::unique_ptr<ValueBase> GetOptionRpcMethod::process(const RpcRequest& req,
     pushRequestOption(result.get(), dr->option, getOptionParser());
   }
   else {
+    const std::string& allowed = e->getOption()->get(PREF_ALLOWED_ENVIRONMENT_VARIABLES);
+    auto& envVarsAssignments = group->getDownloadContext()->commandEnvironment();
+    pushEnvironmentVariables(result.get(), allowed, envVarsAssignments);
     pushRequestOption(result.get(), group->getOption(), getOptionParser());
   }
   return std::move(result);
@@ -1351,46 +1369,6 @@ std::unique_ptr<ValueBase> ChangeUriRpcMethod::process(const RpcRequest& req,
   res->append(Integer::g(delcount));
   res->append(Integer::g(addcount));
   return std::move(res);
-}
-
-std::unique_ptr<ValueBase> ChangeEnvironmentRpcMethod::process(const RpcRequest& req,
-                                                       DownloadEngine* e)
-{
-	  const String* gidParam = checkRequiredParam<String>(req, 0);
-	  const Dict* addVarsParam = checkRequiredParam<Dict>(req, 1);
-	  const List* delVarsParam = checkRequiredParam<List>(req, 2);
-
-	  a2_gid_t gid = str2Gid(gidParam);
-	  auto group = e->getRequestGroupMan()->findGroup(gid);
-	  if (!group) {
-	    throw DL_ABORT_EX(
-	        fmt("Cannot manage environment variables of GID#%s", GroupId::toHex(gid).c_str()));
-	  }
-	  auto& envVarsAssignments = group->getDownloadContext()->commandEnvironment();
-	  size_t delcount = 0;
-	  for (auto& elem : *delVarsParam) {
-	    const String* varName = downcast<String>(elem);
-	    if (varName) {
-	      delcount += envVarsAssignments.erase(varName->s());
-	    }
-	  }
-	  const std::string& allowed = e->getOption()->get(PREF_ALLOWED_ENVIRONMENT_VARIABLES);
-	  size_t addcount = 0;
-	  for (auto& elem : *addVarsParam) {
-	    const std::string& varName = elem.first;
-	    const String* varValue = downcast<String>(elem.second);
-	    std::string::size_type at = allowed.find(varName);
-	    std::string::size_type after = at != std::string::npos ? at + varName.length() : std::string::npos;
-	    if (!varValue || at == std::string::npos || (at > 0 && allowed[at - 1] != ',') || (after < allowed.length() && allowed[after] != ',')) {
-	    	continue;
-	    }
-	    envVarsAssignments[varName] = std::make_unique<std::string>(fmt("%s=%s", varName, varValue->s()));
-	    ++addcount;
-	  }
-	  auto res = List::g();
-	  res->append(Integer::g(addcount));
-	  res->append(Integer::g(delcount));
-	  return std::move(res);
 }
 
 namespace {

@@ -197,6 +197,24 @@ void RpcMethod::gatherChangeableOption(Option* option, Option* pendingOption,
   }
 }
 
+void RpcMethod::updateEnvironment(const std::string& allowed,
+		std::map<std::string, std::unique_ptr<std::string>>& envVarsAssignments, const Dict* optionsDict)
+{
+  for (auto& elem : *optionsDict) {
+    envVarsAssignments.erase(elem.first);
+  }
+  for (auto& elem : *optionsDict) {
+	const std::string& varName = elem.first;
+	const String* varValue = downcast<String>(elem.second);
+	std::string::size_type at = allowed.find(varName);
+	std::string::size_type after = at != std::string::npos ? at + varName.length() : std::string::npos;
+	if (!varValue || at == std::string::npos || (at > 0 && allowed[at - 1] != ',') || (after < allowed.length() && allowed[after] != ',')) {
+		continue;
+	}
+	envVarsAssignments[varName] = std::make_unique<std::string>(fmt("%s=%s", varName, varValue->s()));
+  }
+}
+
 void RpcMethod::gatherChangeableOptionForReserved(Option* option,
                                                   const Dict* optionsDict)
 {

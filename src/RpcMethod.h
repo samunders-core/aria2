@@ -78,6 +78,9 @@ protected:
   void gatherChangeableOption(Option* option, Option* pendingOption,
                               const Dict* optionDict);
 
+  void updateEnvironment(const std::string& allowed,
+  		std::map<std::string, std::unique_ptr<std::string>>& envVarsAssignments, const Dict* optionsDict);
+
   void gatherChangeableOptionForReserved(Option* option,
                                          const Dict* optionsDict);
 

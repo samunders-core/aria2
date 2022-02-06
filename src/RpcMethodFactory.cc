@@ -208,10 +208,6 @@ std::unique_ptr<RpcMethod> createMethod(const std::string& methodName)
     return make_unique<ChangeUriRpcMethod>();
   }
 
-  if (methodName == ChangeEnvironmentRpcMethod::getMethodName()) {
-    return make_unique<ChangeEnvironmentRpcMethod>();
-  }
-
   if (methodName == ChangeOptionRpcMethod::getMethodName()) {
     return make_unique<ChangeOptionRpcMethod>();
   }
