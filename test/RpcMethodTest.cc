@@ -151,8 +151,6 @@ public:
   void testGetSessionInfo();
   void testChangeUri();
   void testChangeUri_fail();
-  void testChangeEnvironment();
-  void testChangeEnvironment_fail();
   void testPause();
   void testSystemMulticall();
   void testSystemMulticall_fail();
