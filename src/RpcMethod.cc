@@ -211,7 +211,7 @@ void RpcMethod::updateEnvironment(const std::string& allowed,
 	if (!varValue || at == std::string::npos || (at > 0 && allowed[at - 1] != ',') || (after < allowed.length() && allowed[after] != ',')) {
 		continue;
 	}
-	envVarsAssignments[varName] = std::make_unique<std::string>(fmt("%s=%s", varName, varValue->s()));
+	envVarsAssignments[varName] = std::make_unique<std::string>(fmt("%s=%s", varName.c_str(), varValue->s().c_str()));
   }
 }
 
