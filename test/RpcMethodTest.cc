@@ -79,8 +79,6 @@ class RpcMethodTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testGetSessionInfo);
   CPPUNIT_TEST(testChangeUri);
   CPPUNIT_TEST(testChangeUri_fail);
-  CPPUNIT_TEST(testChangeEnvironment);
-  CPPUNIT_TEST(testChangeEnvironment_fail);
   CPPUNIT_TEST(testPause);
   CPPUNIT_TEST(testSystemMulticall);
   CPPUNIT_TEST(testSystemMulticall_fail);
