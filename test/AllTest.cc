@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
 
   CppUnit::Test* suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();
   CppUnit::TextUi::TestRunner runner;
-  runner.addTest(suite);
+  runner.addTest(argc > 1 ? suite->findTest(std::string(argv[1])) : suite);
 
   runner.setOutputter(
       new CppUnit::CompilerOutputter(&runner.result(), std::cerr));

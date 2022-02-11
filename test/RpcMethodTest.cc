@@ -53,6 +53,9 @@ class RpcMethodTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testAddMetalink_notBase64Metalink);
   CPPUNIT_TEST(testAddMetalink_withPosition);
 #endif // ENABLE_METALINK
+#ifndef __MINGW32__
+  CPPUNIT_TEST(testExecuteHook);
+#endif // !__MINGW32__
   CPPUNIT_TEST(testGetOption);
   CPPUNIT_TEST(testChangeOption);
   CPPUNIT_TEST(testChangeOption_withBadOption);
@@ -123,6 +126,9 @@ public:
   void testAddMetalink_notBase64Metalink();
   void testAddMetalink_withPosition();
 #endif // ENABLE_METALINK
+#ifndef __MINGW32__
+  void testExecuteHook();
+#endif // !__MINGW32__
   void testGetOption();
   void testChangeOption();
   void testChangeOption_withBadOption();
@@ -572,6 +578,52 @@ void RpcMethodTest::testAddMetalink_withPosition()
 }
 
 #endif // ENABLE_METALINK
+
+#ifndef __MINGW32__
+// UtilTest2 might be correct place but I did not want to include everything for single method test
+void RpcMethodTest::testExecuteHook()
+{
+  auto command = "/tmp/testExecuteHook", script = "#!/bin/sh\necho -n \"EPISODE=$EPISODE\" > /tmp/testExecuteHook.txt";
+  int fd = a2open(command, O_BINARY | O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH), count = strlen(script);
+  CPPUNIT_ASSERT(fd >= 0);
+  CPPUNIT_ASSERT_EQUAL(count, (int) ::write(fd, script, count));
+  CPPUNIT_ASSERT_EQUAL(0, close(fd));
+
+  e_->getOption()->put(PREF_ON_DOWNLOAD_STOP, std::string(command));
+  e_->getOption()->put(PREF_ON_DOWNLOAD_COMPLETE, std::string(command));
+  e_->getOption()->put(PREF_ON_DOWNLOAD_ERROR, std::string(command));
+  e_->getOption()->put(PREF_ALLOWED_ENVIRONMENT_VARIABLES, std::string("EPISODE,DEST"));
+
+  auto group = std::make_shared<RequestGroup>(GroupId::create(), option_);
+  group->getOption()->put(PREF_DIR, "alpha");
+  e_->getRequestGroupMan()->addRequestGroup(group);
+  auto dr = createDownloadResult(error_code::FINISHED, "http://host/fin");
+  dr->option->put(PREF_DIR, "bravo");
+  e_->getRequestGroupMan()->addDownloadResult(dr);
+
+  auto assignment = "EPISODE=S01E01";
+  auto dctx = std::make_shared<DownloadContext>(0, 0, "aria2.tar.bz2");
+  group->setDownloadContext(dctx);
+  dctx->commandEnvironment()[std::string("EPISODE")] = make_unique<std::string>(assignment);
+
+  e_->run(false);
+
+  fd = a2open("/tmp/testExecuteHook.txt", O_BINARY | O_RDONLY, OPEN_MODE), count = strlen(script);
+  CPPUNIT_ASSERT(fd >= 0);
+  struct stat properties;
+  CPPUNIT_ASSERT_EQUAL(0, fstat(fd, &properties));
+  char buf[properties.st_size + 1], *ptr = buf;
+  for (count = ::read(fd, ptr, sizeof(buf)); 0 < count; count = ::read(fd, ptr, sizeof(buf) - (ptr - buf) + 1)) {
+    ptr += count; // +1 above prevents busy loop from read(fd, buf, 0)
+    *ptr = '\0';
+  }
+  CPPUNIT_ASSERT_EQUAL(0, close(fd));
+  CPPUNIT_ASSERT_EQUAL(0, unlink("/tmp/testExecuteHook.txt"));
+
+  CPPUNIT_ASSERT_EQUAL(std::string(assignment), std::string(buf));
+  CPPUNIT_ASSERT_EQUAL(0, unlink(command));
+}
+#endif // !__MINGW32__
 
 void RpcMethodTest::testGetOption()
 {
