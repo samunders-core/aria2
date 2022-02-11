@@ -583,7 +583,7 @@ void RpcMethodTest::testAddMetalink_withPosition()
 // UtilTest2 might be correct place but I did not want to include everything for single method test
 void RpcMethodTest::testExecuteHook()
 {
-  auto command = "/tmp/testExecuteHook", script = "#!/bin/sh\necho -n \"EPISODE=$EPISODE\" > /tmp/testExecuteHook.txt";
+  auto command = "/tmp/testExecuteHook", script = "#!/bin/sh\necho -n \"EPISODE=$EPISODE\" > /tmp/testExecuteHook.txt && sync";
   int fd = a2open(command, O_BINARY | O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH), count = strlen(script);
   CPPUNIT_ASSERT(fd >= 0);
   CPPUNIT_ASSERT_EQUAL(count, (int) ::write(fd, script, count));
@@ -607,6 +607,7 @@ void RpcMethodTest::testExecuteHook()
   dctx->commandEnvironment()[std::string("EPISODE")] = make_unique<std::string>(assignment);
 
   e_->run(false);
+  sleep(2); // above doesn't wait for hook process exit
 
   fd = a2open("/tmp/testExecuteHook.txt", O_BINARY | O_RDONLY, OPEN_MODE), count = strlen(script);
   CPPUNIT_ASSERT(fd >= 0);
