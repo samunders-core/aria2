@@ -77,7 +77,6 @@ std::vector<std::string> rpcMethodNames = {
     "aria2.tellStopped",
     "aria2.getOption",
     "aria2.changeUri",
-	"aria2.changeEnvironment",
     "aria2.changeOption",
     "aria2.getGlobalOption",
     "aria2.changeGlobalOption",
